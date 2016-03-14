@@ -25,6 +25,7 @@ import android.view.SurfaceView;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -43,6 +44,7 @@ import android.util.Log;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class MainActivity extends Activity implements View.OnTouchListener, TextureView.SurfaceTextureListener{
     static String TAG = "Main";
@@ -53,12 +55,15 @@ public class MainActivity extends Activity implements View.OnTouchListener, Text
     SurfaceView rect;
     TextureView view;
     Button button01;
+    TextView text1;
     private Camera mCamera;
 
     int count = 0;
     int left, top, right, bottom;
     int pic_object_x, pic_object_y, pic_object_width, pic_object_height;
     int canvas_width, canvas_height;
+    int parameter1 = 9, parameter2 = 5;
+    int command1, command2 = 0;
 
     Paint paint;
 
@@ -87,6 +92,7 @@ public class MainActivity extends Activity implements View.OnTouchListener, Text
 
         view = (TextureView) findViewById(R.id.surface_view);
         view.setSurfaceTextureListener(this);
+        text1= (TextView) findViewById(R.id.text1);
 
         //view.getHolder().addCallback(this);
 
@@ -196,7 +202,7 @@ public class MainActivity extends Activity implements View.OnTouchListener, Text
 
     public void onSurfaceTextureUpdated(SurfaceTexture surface){
 
-        if (count < 5){
+        if (count < 8){
             count++;
             return;
         }
@@ -210,19 +216,42 @@ public class MainActivity extends Activity implements View.OnTouchListener, Text
                     //Get bitmap
                     Bitmap frame_bmp = view.getBitmap();
 
-                    //Send the bitmap to PC
+                    //Convert the bitmap
                     ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                    frame_bmp.compress(Bitmap.CompressFormat.JPEG, 50,stream);
+                    frame_bmp.compress(Bitmap.CompressFormat.JPEG, 20,stream);
                     byte[] byteArray = stream.toByteArray();
                     InputStream is = new ByteArrayInputStream(byteArray);
                     BufferedInputStream bis = new BufferedInputStream(is);
 
                     Socket socket = null;
                     try {
+                        //Send the image frame
                         socket = new Socket(myRouter_pc_ip, 8080);
                         dos = new DataOutputStream(socket.getOutputStream());
+
+                        //Send how many bytes to read for the image frame
+                        long size = byteArray.length;
+                        dos.writeLong(size);
+                        //Send information to server
+                        dos.writeInt(parameter1);
+                        dos.writeInt(parameter2);
+
+                        //Send the image frame as bytes
                         while ((i = bis.read()) > -1)
                             dos.write(i);
+                        dos.flush();
+
+                        //Receive command from the server
+                        DataInputStream dis = new DataInputStream(socket.getInputStream());
+                        command1 = dis.readInt();
+                        command2 = dis.readInt();
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                text1.setText("Commmand1 & 2: " + String.valueOf(command1) + " " + String.valueOf(command2));
+                            }
+                        });
                     }
                     catch(Exception e){
                         e.printStackTrace();
