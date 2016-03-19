@@ -226,12 +226,12 @@ public class MainActivity extends Activity implements View.OnTouchListener, Text
                     Socket socket = null;
                     try {
                         //Send the image frame
-                        socket = new Socket(myRouter_pc_ip, 8080);
+                        socket = new Socket(eduroam_pc_ip, 8080);
                         dos = new DataOutputStream(socket.getOutputStream());
 
                         //Send how many bytes to read for the image frame
-                        long size = byteArray.length;
-                        dos.writeLong(size);
+                        int size = byteArray.length;
+                        dos.writeInt(size);
                         //Send information to server
                         dos.writeInt(parameter1);
                         dos.writeInt(parameter2);
