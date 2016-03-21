@@ -23,6 +23,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -50,7 +51,7 @@ public class MainActivity extends Activity implements View.OnTouchListener, Text
     static String TAG = "Main";
     String mCurrentPhotoPath;
     String eduroam_pc_ip = "10.89.131.94";
-    String myRouter_pc_ip = "192.168.1.101";
+    String myRouter_pc_ip = "192.168.1.103";
 
     SurfaceView rect;
     TextureView view;
@@ -202,7 +203,7 @@ public class MainActivity extends Activity implements View.OnTouchListener, Text
 
     public void onSurfaceTextureUpdated(SurfaceTexture surface){
 
-        if (count < 8){
+        if (count < 6){
             count++;
             return;
         }
@@ -236,10 +237,13 @@ public class MainActivity extends Activity implements View.OnTouchListener, Text
                         dos.writeInt(parameter1);
                         dos.writeInt(parameter2);
 
+                        //Use buffered stream for sending image frame to increase the speed
+                        BufferedOutputStream bos = new BufferedOutputStream(socket.getOutputStream());
+
                         //Send the image frame as bytes
                         while ((i = bis.read()) > -1)
-                            dos.write(i);
-                        dos.flush();
+                            bos.write(i);
+                        bos.flush();
 
                         //Receive command from the server
                         DataInputStream dis = new DataInputStream(socket.getInputStream());
@@ -252,6 +256,10 @@ public class MainActivity extends Activity implements View.OnTouchListener, Text
                                 text1.setText("Commmand1 & 2: " + String.valueOf(command1) + " " + String.valueOf(command2));
                             }
                         });
+
+                        if (bos != null){
+                            bos.close();
+                        }
                     }
                     catch(Exception e){
                         e.printStackTrace();
